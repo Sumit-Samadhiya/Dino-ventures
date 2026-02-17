@@ -4,6 +4,9 @@ function useGestures({
   onSwipeUp,
   onSwipeDown,
   onScrollDown,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
   minSwipeDistance = 60,
   minSwipeVelocity = 0.4,
 } = {}) {
@@ -29,6 +32,8 @@ function useGestures({
           latestY: touch.clientY,
           latestTime: now,
         }
+
+        onDragStart?.()
       },
       onTouchMove: (event) => {
         const touch = event.touches[0]
@@ -38,12 +43,27 @@ function useGestures({
 
         touchDataRef.current.latestY = touch.clientY
         touchDataRef.current.latestTime = Date.now()
+
+        const distance = touchDataRef.current.latestY - touchDataRef.current.startY
+        const duration = Math.max(touchDataRef.current.latestTime - touchDataRef.current.startTime, 1)
+
+        onDragMove?.({
+          distanceY: distance,
+          absDistanceY: Math.abs(distance),
+          velocityY: Math.abs(distance) / duration,
+        })
       },
       onTouchEnd: () => {
         const { startY, startTime, latestY, latestTime } = touchDataRef.current
         const distance = latestY - startY
         const duration = Math.max(latestTime - startTime, 1)
         const velocity = Math.abs(distance) / duration
+
+        onDragEnd?.({
+          distanceY: distance,
+          absDistanceY: Math.abs(distance),
+          velocityY: velocity,
+        })
 
         if (Math.abs(distance) < minSwipeDistance || velocity < minSwipeVelocity) {
           return
@@ -61,7 +81,16 @@ function useGestures({
         }
       },
     }),
-    [minSwipeDistance, minSwipeVelocity, onScrollDown, onSwipeDown, onSwipeUp],
+    [
+      minSwipeDistance,
+      minSwipeVelocity,
+      onDragEnd,
+      onDragMove,
+      onDragStart,
+      onScrollDown,
+      onSwipeDown,
+      onSwipeUp,
+    ],
   )
 
   return handlers
