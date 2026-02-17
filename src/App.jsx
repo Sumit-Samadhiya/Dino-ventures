@@ -1,7 +1,7 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { ThemeProvider, CssBaseline, Box, Typography } from '@mui/material'
 import Home from './pages/Home'
-import PlayerPage from './pages/PlayerPage'
+import Player from './pages/Player'
 import theme from './styles/theme'
 
 function App() {
@@ -29,7 +29,7 @@ function App() {
         >
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/player/:id" element={<PlayerPage />} />
+            <Route path="/player/:id" element={<Player />} />
           </Routes>
         </Box>
       </Box>
