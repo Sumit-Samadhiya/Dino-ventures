@@ -1,5 +1,6 @@
 import { memo } from 'react'
-import { Box, Card, CardActionArea, CardContent, Chip, Typography } from '@mui/material'
+import { Box, Card, CardActionArea, CardContent, Chip, Stack, Typography } from '@mui/material'
+import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded'
 import { Link as RouterLink } from 'react-router-dom'
 import LazyImage from './LazyImage'
 import { formatDuration } from '../utils/helpers'
@@ -12,20 +13,32 @@ const categoryColorMap = {
   Entertainment: 'primary',
 }
 
+const categoryGradientMap = {
+  Technology: 'linear-gradient(135deg, #3EA6FF, #1E88E5)',
+  Gaming: 'linear-gradient(135deg, #8E24AA, #5E35B1)',
+  Music: 'linear-gradient(135deg, #EC407A, #D81B60)',
+  Education: 'linear-gradient(135deg, #43A047, #2E7D32)',
+  Entertainment: 'linear-gradient(135deg, #FF7043, #F4511E)',
+}
+
 function VideoCard({ video }) {
   return (
     <Card
       sx={{
         height: '100%',
         backgroundColor: 'background.paper',
-        transition: 'transform 220ms ease, box-shadow 220ms ease',
+        borderRadius: 2,
+        overflow: 'hidden',
+        transition: 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), filter 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+        willChange: 'transform',
         '&:hover': {
-          transform: 'translateY(-6px)',
-          boxShadow: 8,
+          transform: 'translateY(-3px) scale(1.01)',
+          boxShadow: 10,
+          filter: 'brightness(1.04)',
         },
       }}
     >
-      <CardActionArea component={RouterLink} to={`/player/${video.id}`} aria-label={`Open video ${video.title}`} sx={{ height: '100%' }}>
+      <CardActionArea component={RouterLink} to={`/player/${video.id}`} aria-label={`Open video ${video.title}`} sx={{ height: '100%', alignItems: 'stretch' }}>
         <Box sx={{ position: 'relative', overflow: 'hidden' }}>
           <LazyImage
             src={video.thumbnail}
@@ -34,12 +47,33 @@ function VideoCard({ video }) {
               width: '100%',
               aspectRatio: '16 / 9',
               objectFit: 'cover',
-              transition: 'transform 260ms ease',
+              borderRadius: 1,
+              transition: 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1)',
               '.MuiCard-root:hover &': {
-                transform: 'scale(1.04)',
+                transform: 'scale(1.02)',
               },
             }}
           />
+
+          <Box
+            sx={{
+              position: 'absolute',
+              left: 8,
+              top: 8,
+              px: 0.8,
+              py: 0.35,
+              borderRadius: 1,
+              color: '#FFFFFF',
+              fontSize: '0.68rem',
+              fontWeight: 600,
+              lineHeight: 1,
+              letterSpacing: 0.2,
+              background: categoryGradientMap[video.category] ?? 'linear-gradient(135deg, #606060, #3F3F3F)',
+            }}
+          >
+            {video.category}
+          </Box>
+
           <Box
             sx={{
               position: 'absolute',
@@ -47,8 +81,8 @@ function VideoCard({ video }) {
               bottom: 8,
               bgcolor: 'rgba(0, 0, 0, 0.72)',
               color: 'common.white',
-              px: 0.8,
-              py: 0.2,
+              px: 0.5,
+              py: 0.5,
               borderRadius: 1,
               fontSize: '0.74rem',
               fontWeight: 600,
@@ -59,29 +93,42 @@ function VideoCard({ video }) {
           </Box>
         </Box>
 
-        <CardContent>
+        <CardContent sx={{ p: 1.5 }}>
           <Typography
-            variant="h6"
+            variant="subtitle1"
             sx={(theme) => ({
               ...theme.typography.videoTitle,
-              mb: 1,
+              mb: 1.2,
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              minHeight: '2.7em',
+              minHeight: '2.8em',
+              color: '#FFFFFF',
             })}
           >
             {video.title}
           </Typography>
 
-          <Chip
-            size="small"
-            label={video.category}
-            color={categoryColorMap[video.category] ?? 'default'}
-            sx={{ fontWeight: 600, transition: 'transform 140ms ease', '&:active': { transform: 'scale(0.97)' } }}
-          />
+          <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+            <Chip
+              size="small"
+              label={video.category}
+              color={categoryColorMap[video.category] ?? 'default'}
+              sx={{
+                fontWeight: 600,
+                height: 24,
+                transition: 'transform 140ms ease',
+                '&:active': { transform: 'scale(0.97)' },
+              }}
+            />
+
+            <Stack direction="row" alignItems="center" spacing={0.4}>
+              <ScheduleRoundedIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: '0.75rem', color: '#AAAAAA' }}>{formatDuration(video.duration)}</Typography>
+            </Stack>
+          </Stack>
         </CardContent>
       </CardActionArea>
     </Card>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Button, CircularProgress, Typography } from '@mui/material'
 import PlayerControls from './PlayerControls'
+import SkipAnimation from './SkipAnimation'
 
 function VideoPlayer({ video, player }) {
   const containerRef = useRef(null)
@@ -36,12 +37,12 @@ function VideoPlayer({ video, player }) {
     setSkipFeedback(`${label}-${Date.now()}`)
   }
 
-  const skipFeedbackText = useMemo(() => {
+  const skipFeedbackType = useMemo(() => {
     if (!skipFeedback) {
-      return ''
+      return null
     }
 
-    return skipFeedback.startsWith('+10') ? '+10s' : '-10s'
+    return skipFeedback.startsWith('+10') ? 'forward' : 'backward'
   }, [skipFeedback])
 
   useEffect(() => {
@@ -107,6 +108,7 @@ function VideoPlayer({ video, player }) {
     <Box
       ref={containerRef}
       onMouseMove={revealControls}
+      onMouseEnter={revealControls}
       onTouchStart={revealControls}
       onClick={revealControls}
       role="region"
@@ -137,31 +139,7 @@ function VideoPlayer({ video, player }) {
         }}
       />
 
-      {skipFeedback && (
-        <Box
-          key={skipFeedback}
-          sx={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            px: 1.2,
-            py: 0.6,
-            borderRadius: 1,
-            bgcolor: 'rgba(0, 0, 0, 0.65)',
-            color: 'common.white',
-            fontSize: '0.95rem',
-            fontWeight: 700,
-            animation: 'skipPulse 560ms ease-out',
-            '@keyframes skipPulse': {
-              from: { opacity: 0, transform: 'translate(-50%, -46%) scale(0.92)' },
-              to: { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' },
-            },
-          }}
-        >
-          {skipFeedbackText}
-        </Box>
-      )}
+      {skipFeedbackType && <SkipAnimation type={skipFeedbackType} />}
 
       {player.isBuffering && !player.error && (
         <Box
@@ -219,13 +197,15 @@ function VideoPlayer({ video, player }) {
           inset: 0,
           opacity: showControls ? 1 : 0,
           pointerEvents: showControls ? 'auto' : 'none',
-          transition: 'opacity 220ms ease',
+          transition: 'opacity 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+          willChange: 'opacity',
         }}
       >
         <PlayerControls
           isPlaying={player.isPlaying}
           currentTime={player.currentTime}
           duration={player.duration}
+          bufferedPercent={player.bufferedPercent}
           volume={player.volume}
           isFullscreen={isFullscreen}
           onPlayPause={handlePlayPause}

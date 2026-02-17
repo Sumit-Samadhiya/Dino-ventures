@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react'
 import {
   Box,
   Chip,
+  Divider,
   Drawer,
   ListItemButton,
   Stack,
@@ -12,7 +13,7 @@ import { FixedSizeList as VirtualList } from 'react-window'
 import LazyImage from './LazyImage'
 import { formatDuration } from '../utils/helpers'
 
-const ROW_HEIGHT = 74
+const ROW_HEIGHT = 94
 
 const Row = memo(function Row({ index, style, data }) {
   const video = data.videos[index]
@@ -26,20 +27,26 @@ const Row = memo(function Row({ index, style, data }) {
         aria-label={`Play ${video.title}`}
         sx={{
           borderRadius: 1.5,
-          mb: 0.5,
-          alignItems: 'flex-start',
+          mb: 0.35,
+          alignItems: 'center',
           gap: 1,
-          minHeight: 72,
+          minHeight: 88,
+          border: '1px solid transparent',
+          transition: 'background-color 200ms cubic-bezier(0.4,0,0.2,1), border-color 200ms cubic-bezier(0.4,0,0.2,1)',
+          '&:hover': {
+            bgcolor: 'rgba(255,255,255,0.06)',
+          },
           '&.Mui-selected': {
-            bgcolor: 'action.selected',
+            bgcolor: 'rgba(255,0,0,0.12)',
+            borderColor: 'primary.main',
           },
         }}
       >
         <LazyImage
           src={video.thumbnail}
           alt={video.title}
-          width={84}
-          height={48}
+          width={120}
+          height={67.5}
           sx={{
             borderRadius: 1,
             flexShrink: 0,
@@ -50,7 +57,7 @@ const Row = memo(function Row({ index, style, data }) {
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography
             sx={{
-              fontSize: '0.92rem',
+              fontSize: '0.9rem',
               lineHeight: 1.3,
               mb: 0.3,
               display: '-webkit-box',
@@ -62,13 +69,19 @@ const Row = memo(function Row({ index, style, data }) {
           >
             {video.title}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {formatDuration(video.duration)}
-          </Typography>
+          <Stack direction="row" alignItems="center" spacing={0.8}>
+            <Typography variant="caption" color="text.secondary">
+              {video.category}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {formatDuration(video.duration)}
+            </Typography>
+          </Stack>
         </Box>
 
         {isCurrent && <PlayCircleFilledWhiteRoundedIcon color="primary" fontSize="small" aria-label="Currently playing" />}
       </ListItemButton>
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
     </Box>
   )
 })
@@ -91,12 +104,12 @@ function VideoList({ open, onClose, videos, currentVideoId, category, onSelectVi
       ModalProps={{ keepMounted: true }}
       PaperProps={{
         sx: {
-          borderTopLeftRadius: 18,
-          borderTopRightRadius: 18,
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
           maxHeight: '68vh',
           bgcolor: 'background.paper',
           overflow: 'hidden',
-          transition: 'transform 260ms ease',
+          transition: 'transform 260ms cubic-bezier(0.4,0,0.2,1)',
         },
       }}
       BackdropProps={{
@@ -105,7 +118,7 @@ function VideoList({ open, onClose, videos, currentVideoId, category, onSelectVi
         },
       }}
     >
-      <Box sx={{ px: 2, pt: 1.2, pb: 1 }}>
+      <Box sx={{ px: 2, pt: 1.2, pb: 1.2, position: 'relative' }}>
         <Box
           sx={{
             width: 42,
@@ -123,7 +136,35 @@ function VideoList({ open, onClose, videos, currentVideoId, category, onSelectVi
           <Chip size="small" color="primary" label={category} />
         </Stack>
 
-        <Box sx={{ maxHeight: '56vh', scrollBehavior: 'smooth' }}>
+        <Box
+          sx={{
+            maxHeight: '56vh',
+            scrollBehavior: 'smooth',
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              top: 0,
+              height: 14,
+              background: 'linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0))',
+              pointerEvents: 'none',
+              zIndex: 2,
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 14,
+              background: 'linear-gradient(0deg, rgba(0,0,0,0.35), rgba(0,0,0,0))',
+              pointerEvents: 'none',
+              zIndex: 2,
+            },
+          }}
+        >
           <VirtualList
             height={Math.max(virtualHeight, ROW_HEIGHT)}
             width="100%"

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Box, Button, Chip, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, Chip, Snackbar, Stack, Typography } from '@mui/material'
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import VideoPlayer from '../components/VideoPlayer'
 import VideoList from '../components/VideoList'
@@ -21,6 +21,7 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
   const [isVideoListOpen, setIsVideoListOpen] = useState(false)
   const [dragOffsetY, setDragOffsetY] = useState(0)
   const [isDraggingDown, setIsDraggingDown] = useState(false)
+  const [toast, setToast] = useState({ open: false, message: '', severity: 'info' })
 
   useEffect(() => {
     setCurrentVideoId(id)
@@ -132,6 +133,7 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
     setCurrentVideoId(nextVideoId)
     navigate(`/player/${nextVideoId}`)
     setIsVideoListOpen(false)
+    setToast({ open: true, message: 'Switched to next video', severity: 'success' })
   }
 
   if (!video) {
@@ -190,7 +192,10 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
           <AutoPlayCountdown
             nextVideo={nextVideo}
             secondsLeft={autoPlayState.secondsLeft}
-            onCancel={autoPlayState.cancel}
+            onCancel={() => {
+              autoPlayState.cancel()
+              setToast({ open: true, message: 'Autoplay canceled', severity: 'info' })
+            }}
           />
         )}
 
@@ -246,6 +251,17 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
         category={video.category}
         onSelectVideo={handleSwitchVideo}
       />
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={1800}
+        onClose={() => setToast((previous) => ({ ...previous, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert variant="filled" severity={toast.severity} sx={{ width: '100%' }}>
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

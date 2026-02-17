@@ -5,6 +5,7 @@ function useVideoPlayer(videoRef) {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(1)
+  const [bufferedPercent, setBufferedPercent] = useState(0)
   const [hasEnded, setHasEnded] = useState(false)
   const [isBuffering, setIsBuffering] = useState(false)
   const [error, setError] = useState('')
@@ -99,6 +100,15 @@ function useVideoPlayer(videoRef) {
       setHasEnded(false)
       setIsBuffering(false)
     }
+    const handleProgress = () => {
+      if (!video.duration || video.buffered.length === 0) {
+        setBufferedPercent(0)
+        return
+      }
+
+      const bufferedEnd = video.buffered.end(video.buffered.length - 1)
+      setBufferedPercent(Math.min((bufferedEnd / video.duration) * 100, 100))
+    }
     const handleVolumeChange = () => setVolume(video.volume)
     const handleWaiting = () => setIsBuffering(true)
     const handleCanPlay = () => {
@@ -125,6 +135,7 @@ function useVideoPlayer(videoRef) {
     video.addEventListener('timeupdate', handleTimeUpdate)
     video.addEventListener('loadedmetadata', handleLoadedMetadata)
     video.addEventListener('durationchange', handleLoadedMetadata)
+    video.addEventListener('progress', handleProgress)
     video.addEventListener('volumechange', handleVolumeChange)
     video.addEventListener('waiting', handleWaiting)
     video.addEventListener('canplay', handleCanPlay)
@@ -139,6 +150,7 @@ function useVideoPlayer(videoRef) {
       video.removeEventListener('timeupdate', handleTimeUpdate)
       video.removeEventListener('loadedmetadata', handleLoadedMetadata)
       video.removeEventListener('durationchange', handleLoadedMetadata)
+      video.removeEventListener('progress', handleProgress)
       video.removeEventListener('volumechange', handleVolumeChange)
       video.removeEventListener('waiting', handleWaiting)
       video.removeEventListener('canplay', handleCanPlay)
@@ -185,6 +197,7 @@ function useVideoPlayer(videoRef) {
     currentTime,
     duration,
     volume,
+    bufferedPercent,
     hasEnded,
     isBuffering,
     error,

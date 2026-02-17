@@ -70,27 +70,33 @@ function MiniPlayer({ data, onClose, onRestore, onStateUpdate }) {
       aria-label="Restore mini player"
       sx={{
         position: 'fixed',
-        left: { xs: 8, sm: 16, md: 24 },
-        right: { xs: 8, sm: 16, md: 24 },
+        left: { xs: 0, md: 'auto' },
+        right: { xs: 0, md: 20 },
         bottom: { xs: 8, sm: 12, md: 16 },
-        height: { xs: 80, sm: 88, md: 92 },
-        bgcolor: 'background.paper',
-        border: '1px solid',
+        width: { xs: '100%', md: 400 },
+        maxWidth: { xs: '100%', md: 400 },
+        height: { xs: 72, md: 78 },
+        bgcolor: 'rgba(31,31,31,0.9)',
+        borderTop: '1px solid',
         borderColor: 'divider',
         boxShadow: 8,
-        borderRadius: 2,
+        borderRadius: { xs: 0, md: 2 },
+        backdropFilter: 'blur(10px)',
         zIndex: 1400,
         overflow: 'hidden',
         cursor: 'pointer',
         transform: 'translateY(0)',
-        animation: 'miniSlideIn 220ms ease-out',
+        animation: 'miniSlideIn 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+        willChange: 'transform',
         '@keyframes miniSlideIn': {
-          from: { opacity: 0, transform: 'translateY(16px)' },
+          from: { opacity: 0, transform: 'translateY(28px)' },
           to: { opacity: 1, transform: 'translateY(0)' },
         },
       }}
     >
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ height: '100%', px: 1 }}>
+      <Box sx={{ position: 'absolute', left: '50%', top: 4, transform: 'translateX(-50%)', width: 34, height: 4, borderRadius: 99, bgcolor: 'rgba(255,255,255,0.35)' }} />
+
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ height: '100%', px: 1, pt: { xs: 1, md: 0.7 } }}>
         <Box
           component="video"
           ref={videoRef}
@@ -100,7 +106,7 @@ function MiniPlayer({ data, onClose, onRestore, onStateUpdate }) {
           onTimeUpdate={(event) => onStateUpdate({ currentTime: event.currentTarget.currentTime })}
           sx={{
             height: '100%',
-            width: { xs: 128, sm: 150, md: 165 },
+            width: { xs: 108, md: 120 },
             borderRadius: 1,
             objectFit: 'cover',
             backgroundColor: 'black',
@@ -111,9 +117,9 @@ function MiniPlayer({ data, onClose, onRestore, onStateUpdate }) {
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography
             sx={{
-              fontSize: { xs: '0.86rem', sm: '0.94rem' },
+              fontSize: { xs: '0.82rem', md: '0.88rem' },
               display: '-webkit-box',
-              WebkitLineClamp: 2,
+              WebkitLineClamp: 1,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -121,7 +127,7 @@ function MiniPlayer({ data, onClose, onRestore, onStateUpdate }) {
           >
             {data.title}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', md: 'block' } }}>
             Swipe up to restore
           </Typography>
         </Box>
