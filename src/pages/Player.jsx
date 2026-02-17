@@ -131,7 +131,12 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
     }
 
     setCurrentVideoId(nextVideoId)
-    navigate(`/player/${nextVideoId}`)
+    
+    // Smooth transition with slight delay for animation
+    setTimeout(() => {
+      navigate(`/player/${nextVideoId}`)
+    }, 50)
+    
     setIsVideoListOpen(false)
     setToast({ open: true, message: 'Switched to next video', severity: 'success' })
   }

@@ -7,12 +7,17 @@ import YouTubePlayer from './YouTubePlayer'
 function VideoPlayer({ video, player }) {
   const containerRef = useRef(null)
   const hideTimeoutRef = useRef(null)
+  const updateIntervalRef = useRef(null)
   const [showControls, setShowControls] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [skipFeedback, setSkipFeedback] = useState(null)
   const [youtubePlayer, setYoutubePlayer] = useState(null)
+  const [youtubeState, setYoutubeState] = useState({
+    currentTime: 0,
+    duration: 0,
+    isPlaying: false,
+  })
 
-  // Extract YouTube video ID from embed URL
   const getYoutubeVideoId = (url) => {
     if (!url) return null
     const match = url.match(/(?:youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/)
@@ -37,9 +42,8 @@ function VideoPlayer({ video, player }) {
 
   const scheduleAutoHide = () => {
     clearHideTimeout()
-    if (!player.isPlaying) {
-      return
-    }
+    const isCurrentlyPlaying = isYouTubeVideo ? youtubeState.isPlaying : player.isPlaying
+    if (!isCurrentlyPlaying) return
 
     hideTimeoutRef.current = setTimeout(() => {
       setShowControls(false)
@@ -56,25 +60,64 @@ function VideoPlayer({ video, player }) {
   }
 
   const skipFeedbackType = useMemo(() => {
-    if (!skipFeedback) {
-      return null
-    }
-
+    if (!skipFeedback) return null
     return skipFeedback.startsWith('+10') ? 'forward' : 'backward'
   }, [skipFeedback])
 
   const handleYoutubeReady = (event) => {
-    setYoutubePlayer(event.target)
+    const player = event.target
+    setYoutubePlayer(player)
+    // Set initial state
+    if (player) {
+      setYoutubeState({
+        currentTime: player.getCurrentTime?.() || 0,
+        duration: player.getDuration?.() || 0,
+        isPlaying: false,
+      })
+    }
   }
 
   const handleYoutubeStateChange = (event) => {
-    // YouTube player state: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 video cued
     const playerState = event.data
-    if (playerState === 1) {
-      // Playing
+    const isPlaying = playerState === 1
+
+    setYoutubeState((prev) => ({
+      ...prev,
+      isPlaying,
+    }))
+
+    if (isPlaying) {
       scheduleAutoHide()
     }
   }
+
+  // Update YouTube player state periodically
+  useEffect(() => {
+    if (!isYouTubeVideo || !youtubePlayer) return
+
+    updateIntervalRef.current = setInterval(() => {
+      try {
+        const current = youtubePlayer.getCurrentTime?.() || 0
+        const duration = youtubePlayer.getDuration?.() || 0
+        const state = youtubePlayer.getPlayerState?.() || -1
+        const isPlaying = state === 1
+
+        setYoutubeState({
+          currentTime: current,
+          duration: duration,
+          isPlaying: isPlaying,
+        })
+      } catch (err) {
+        // Silently handle YouTube API errors
+      }
+    }, 500)
+
+    return () => {
+      if (updateIntervalRef.current) {
+        clearInterval(updateIntervalRef.current)
+      }
+    }
+  }, [isYouTubeVideo, youtubePlayer])
 
   useEffect(() => {
     revealControls()
@@ -91,9 +134,7 @@ function VideoPlayer({ video, player }) {
   }, [])
 
   useEffect(() => {
-    if (!skipFeedback) {
-      return
-    }
+    if (!skipFeedback) return
 
     const timer = setTimeout(() => {
       setSkipFeedback(null)
@@ -103,20 +144,22 @@ function VideoPlayer({ video, player }) {
   }, [skipFeedback])
 
   const toggleFullscreen = async () => {
-    if (!containerRef.current) {
-      return
-    }
+    if (!containerRef.current) return
 
     if (!document.fullscreenElement) {
-      await containerRef.current.requestFullscreen()
+      await containerRef.current.requestFullscreen().catch(() => {
+        // Fullscreen request failed
+      })
     } else {
-      await document.exitFullscreen()
+      await document.exitFullscreen().catch(() => {
+        // Exit fullscreen failed
+      })
     }
   }
 
   const handlePlayPause = () => {
     if (isYouTubeVideo && youtubePlayer) {
-      if (youtubePlayer.getPlayerState?.() === 1) {
+      if (youtubeState.isPlaying) {
         youtubePlayer.pauseVideo?.()
       } else {
         youtubePlayer.playVideo?.()
@@ -133,8 +176,9 @@ function VideoPlayer({ video, player }) {
 
   const handleSkipBackward = () => {
     if (isYouTubeVideo && youtubePlayer) {
-      const current = youtubePlayer.getCurrentTime?.() || 0
-      youtubePlayer.seekTo?.(Math.max(current - 10, 0))
+      const newTime = Math.max(youtubeState.currentTime - 10, 0)
+      youtubePlayer.seekTo?.(newTime)
+      setYoutubeState((prev) => ({ ...prev, currentTime: newTime }))
     } else {
       player.skipBackward()
     }
@@ -144,9 +188,9 @@ function VideoPlayer({ video, player }) {
 
   const handleSkipForward = () => {
     if (isYouTubeVideo && youtubePlayer) {
-      const current = youtubePlayer.getCurrentTime?.() || 0
-      const duration = youtubePlayer.getDuration?.() || 0
-      youtubePlayer.seekTo?.(Math.min(current + 10, duration))
+      const newTime = Math.min(youtubeState.currentTime + 10, youtubeState.duration)
+      youtubePlayer.seekTo?.(newTime)
+      setYoutubeState((prev) => ({ ...prev, currentTime: newTime }))
     } else {
       player.skipForward()
     }
@@ -188,7 +232,7 @@ function VideoPlayer({ video, player }) {
           }}
         />
 
-        <YouTubePlayer videoId={youtubeVideoId} isPlaying={player.isPlaying} onReady={handleYoutubeReady} onStateChange={handleYoutubeStateChange} />
+        <YouTubePlayer videoId={youtubeVideoId} isPlaying={youtubeState.isPlaying} onReady={handleYoutubeReady} onStateChange={handleYoutubeStateChange} />
 
         <Box sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: '8%', bgcolor: 'rgba(0,0,0,0.58)', zIndex: 2, pointerEvents: 'none' }} />
         <Box sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '8%', bgcolor: 'rgba(0,0,0,0.58)', zIndex: 2, pointerEvents: 'none' }} />
@@ -196,15 +240,18 @@ function VideoPlayer({ video, player }) {
         {skipFeedbackType && <SkipAnimation type={skipFeedbackType} />}
 
         <PlayerControls
-          currentTime={youtubePlayer?.getCurrentTime?.() || 0}
-          duration={youtubePlayer?.getDuration?.() || video.duration}
-          isPlaying={youtubePlayer?.getPlayerState?.() === 1}
+          currentTime={youtubeState.currentTime}
+          duration={youtubeState.duration || video.duration}
+          isPlaying={youtubeState.isPlaying}
           bufferedPercentage={0}
           isFullscreen={isFullscreen}
           onPlayPause={handlePlayPause}
           onSkipBackward={handleSkipBackward}
           onSkipForward={handleSkipForward}
-          onSeek={(seconds) => youtubePlayer?.seekTo?.(seconds)}
+          onSeek={(seconds) => {
+            youtubePlayer?.seekTo?.(seconds)
+            setYoutubeState((prev) => ({ ...prev, currentTime: seconds }))
+          }}
           onVolumeChange={(volume) => youtubePlayer?.setVolume?.(volume * 100)}
           onFullscreenToggle={toggleFullscreen}
           showControls={showControls}
@@ -321,31 +368,20 @@ function VideoPlayer({ video, player }) {
         </Box>
       )}
 
-      <Box
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          opacity: showControls ? 1 : 0,
-          pointerEvents: showControls ? 'auto' : 'none',
-          transition: 'opacity 300ms cubic-bezier(0.4, 0, 0.2, 1)',
-          willChange: 'opacity',
-        }}
-      >
-        <PlayerControls
-          isPlaying={player.isPlaying}
-          currentTime={player.currentTime}
-          duration={player.duration}
-          bufferedPercent={player.bufferedPercent}
-          volume={player.volume}
-          isFullscreen={isFullscreen}
-          onPlayPause={handlePlayPause}
-          onSkipBackward={handleSkipBackward}
-          onSkipForward={handleSkipForward}
-          onSeek={player.seek}
-          onVolumeChange={player.setPlayerVolume}
-          onToggleFullscreen={toggleFullscreen}
-        />
-      </Box>
+      <PlayerControls
+        currentTime={player.currentTime}
+        duration={player.duration}
+        isPlaying={player.isPlaying}
+        bufferedPercentage={player.bufferedPercent}
+        isFullscreen={isFullscreen}
+        onPlayPause={handlePlayPause}
+        onSkipBackward={handleSkipBackward}
+        onSkipForward={handleSkipForward}
+        onSeek={player.seek}
+        onVolumeChange={player.setPlayerVolume}
+        onFullscreenToggle={toggleFullscreen}
+        showControls={showControls}
+      />
     </Box>
   )
 }
