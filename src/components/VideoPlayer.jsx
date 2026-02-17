@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Button, CircularProgress, Typography } from '@mui/material'
 import PlayerControls from './PlayerControls'
 import SkipAnimation from './SkipAnimation'
+import YouTubePlayer from './YouTubePlayer'
 
 function VideoPlayer({ video, player }) {
   const containerRef = useRef(null)
@@ -9,6 +10,23 @@ function VideoPlayer({ video, player }) {
   const [showControls, setShowControls] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [skipFeedback, setSkipFeedback] = useState(null)
+  const [youtubePlayer, setYoutubePlayer] = useState(null)
+
+  // Extract YouTube video ID from embed URL
+  const getYoutubeVideoId = (url) => {
+    if (!url) return null
+    const match = url.match(/(?:youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/)
+    return match ? match[1] : null
+  }
+
+  const youtubeVideoId = useMemo(() => {
+    if (video?.mediaType === 'YOUTUBE') {
+      return getYoutubeVideoId(video.videoUrl)
+    }
+    return null
+  }, [video])
+
+  const isYouTubeVideo = Boolean(youtubeVideoId)
 
   const clearHideTimeout = () => {
     if (hideTimeoutRef.current) {
@@ -45,10 +63,23 @@ function VideoPlayer({ video, player }) {
     return skipFeedback.startsWith('+10') ? 'forward' : 'backward'
   }, [skipFeedback])
 
+  const handleYoutubeReady = (event) => {
+    setYoutubePlayer(event.target)
+  }
+
+  const handleYoutubeStateChange = (event) => {
+    // YouTube player state: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 video cued
+    const playerState = event.data
+    if (playerState === 1) {
+      // Playing
+      scheduleAutoHide()
+    }
+  }
+
   useEffect(() => {
     revealControls()
     return () => clearHideTimeout()
-  }, [player.isPlaying])
+  }, [])
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -84,24 +115,102 @@ function VideoPlayer({ video, player }) {
   }
 
   const handlePlayPause = () => {
-    if (player.isPlaying) {
-      player.pause()
+    if (isYouTubeVideo && youtubePlayer) {
+      if (youtubePlayer.getPlayerState?.() === 1) {
+        youtubePlayer.pauseVideo?.()
+      } else {
+        youtubePlayer.playVideo?.()
+      }
     } else {
-      player.play()
+      if (player.isPlaying) {
+        player.pause()
+      } else {
+        player.play()
+      }
     }
     revealControls()
   }
 
   const handleSkipBackward = () => {
-    player.skipBackward()
+    if (isYouTubeVideo && youtubePlayer) {
+      const current = youtubePlayer.getCurrentTime?.() || 0
+      youtubePlayer.seekTo?.(Math.max(current - 10, 0))
+    } else {
+      player.skipBackward()
+    }
     showSkipFeedback('-10')
     revealControls()
   }
 
   const handleSkipForward = () => {
-    player.skipForward()
+    if (isYouTubeVideo && youtubePlayer) {
+      const current = youtubePlayer.getCurrentTime?.() || 0
+      const duration = youtubePlayer.getDuration?.() || 0
+      youtubePlayer.seekTo?.(Math.min(current + 10, duration))
+    } else {
+      player.skipForward()
+    }
     showSkipFeedback('+10')
     revealControls()
+  }
+
+  if (isYouTubeVideo) {
+    return (
+      <Box
+        ref={containerRef}
+        onMouseMove={revealControls}
+        onMouseEnter={revealControls}
+        onTouchStart={revealControls}
+        onClick={revealControls}
+        role="region"
+        aria-label="YouTube video player"
+        sx={{
+          position: 'relative',
+          width: '100%',
+          aspectRatio: '16 / 9',
+          bgcolor: 'black',
+          borderRadius: 2,
+          overflow: 'hidden',
+          boxShadow: '0 0 42px rgba(255, 0, 0, 0.18)',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: -18,
+            backgroundImage: `url(${video.thumbnail})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(26px) saturate(1.05)',
+            opacity: 0.24,
+            transform: 'scale(1.1)',
+            pointerEvents: 'none',
+          }}
+        />
+
+        <YouTubePlayer videoId={youtubeVideoId} isPlaying={player.isPlaying} onReady={handleYoutubeReady} onStateChange={handleYoutubeStateChange} />
+
+        <Box sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: '8%', bgcolor: 'rgba(0,0,0,0.58)', zIndex: 2, pointerEvents: 'none' }} />
+        <Box sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '8%', bgcolor: 'rgba(0,0,0,0.58)', zIndex: 2, pointerEvents: 'none' }} />
+
+        {skipFeedbackType && <SkipAnimation type={skipFeedbackType} />}
+
+        <PlayerControls
+          currentTime={youtubePlayer?.getCurrentTime?.() || 0}
+          duration={youtubePlayer?.getDuration?.() || video.duration}
+          isPlaying={youtubePlayer?.getPlayerState?.() === 1}
+          bufferedPercentage={0}
+          isFullscreen={isFullscreen}
+          onPlayPause={handlePlayPause}
+          onSkipBackward={handleSkipBackward}
+          onSkipForward={handleSkipForward}
+          onSeek={(seconds) => youtubePlayer?.seekTo?.(seconds)}
+          onVolumeChange={(volume) => youtubePlayer?.setVolume?.(volume * 100)}
+          onFullscreenToggle={toggleFullscreen}
+          showControls={showControls}
+        />
+      </Box>
+    )
   }
 
   return (

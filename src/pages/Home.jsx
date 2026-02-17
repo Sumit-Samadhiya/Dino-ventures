@@ -6,17 +6,17 @@ import SportsEsportsRoundedIcon from '@mui/icons-material/SportsEsportsRounded'
 import MusicNoteRoundedIcon from '@mui/icons-material/MusicNoteRounded'
 import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded'
 import MovieRoundedIcon from '@mui/icons-material/MovieRounded'
+import SmartToyRoundedIcon from '@mui/icons-material/SmartToyRounded'
+import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded'
 import CategorySection from '../components/CategorySection'
 import { videos } from '../data/videos'
 import { routeTransition } from '../styles/animations'
 import { categoryColors } from '../styles/theme'
 
 const categoryIconMap = {
-  Technology: <MemoryRoundedIcon sx={{ fontSize: 16 }} />,
-  Gaming: <SportsEsportsRoundedIcon sx={{ fontSize: 16 }} />,
-  Music: <MusicNoteRoundedIcon sx={{ fontSize: 16 }} />,
-  Education: <SchoolRoundedIcon sx={{ fontSize: 16 }} />,
-  Entertainment: <MovieRoundedIcon sx={{ fontSize: 16 }} />,
+  'Social Media AI': <SmartToyRoundedIcon sx={{ fontSize: 16 }} />,
+  'AI Income': <MonetizationOnRoundedIcon sx={{ fontSize: 16 }} />,
+  'AI Essentials': <SchoolRoundedIcon sx={{ fontSize: 16 }} />,
 }
 
 function Home({ miniPlayerVisible = false }) {

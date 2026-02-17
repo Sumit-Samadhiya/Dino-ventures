@@ -18,7 +18,7 @@ const categoryColorMap = {
 function VideoCard({ video }) {
   const [isPreviewVisible, setIsPreviewVisible] = useState(false)
   const previewRef = useRef(null)
-  const canPreview = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches
+  const canPreview = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches && video.mediaType !== 'YOUTUBE'
 
   const handlePreviewStart = async () => {
     if (!canPreview || !previewRef.current) {
