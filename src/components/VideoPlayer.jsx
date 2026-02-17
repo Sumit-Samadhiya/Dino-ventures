@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Box } from '@mui/material'
+import { Box, Button, CircularProgress, Typography } from '@mui/material'
 import PlayerControls from './PlayerControls'
 
 function VideoPlayer({ video, player }) {
@@ -109,6 +109,8 @@ function VideoPlayer({ video, player }) {
       onMouseMove={revealControls}
       onTouchStart={revealControls}
       onClick={revealControls}
+      role="region"
+      aria-label="Video player"
       sx={{
         position: 'relative',
         width: '100%',
@@ -126,6 +128,7 @@ function VideoPlayer({ video, player }) {
         autoPlay
         playsInline
         controls={false}
+        aria-label={video.title}
         sx={{
           width: '100%',
           height: '100%',
@@ -157,6 +160,56 @@ function VideoPlayer({ video, player }) {
           }}
         >
           {skipFeedbackText}
+        </Box>
+      )}
+
+      {player.isBuffering && !player.error && (
+        <Box
+          role="status"
+          aria-live="polite"
+          sx={{
+            position: 'absolute',
+            right: 12,
+            top: 12,
+            px: 1,
+            py: 0.6,
+            borderRadius: 1,
+            bgcolor: 'rgba(0, 0, 0, 0.66)',
+            color: 'common.white',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
+          <CircularProgress size={16} color="inherit" />
+          <Typography variant="caption">Buffering...</Typography>
+        </Box>
+      )}
+
+      {player.error && (
+        <Box
+          role="alert"
+          sx={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: { xs: '88%', sm: 340 },
+            bgcolor: 'rgba(0, 0, 0, 0.82)',
+            border: '1px solid',
+            borderColor: 'error.main',
+            borderRadius: 1.5,
+            p: 1.5,
+            color: 'common.white',
+            textAlign: 'center',
+          }}
+        >
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            {player.error}
+          </Typography>
+          <Button size="small" variant="contained" color="error" onClick={player.retry} aria-label="Retry video playback">
+            Retry
+          </Button>
         </Box>
       )}
 

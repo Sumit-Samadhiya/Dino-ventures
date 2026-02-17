@@ -1,17 +1,88 @@
+import { memo, useMemo } from 'react'
 import {
-  Avatar,
   Box,
   Chip,
   Drawer,
-  List,
   ListItemButton,
   Stack,
   Typography,
 } from '@mui/material'
 import PlayCircleFilledWhiteRoundedIcon from '@mui/icons-material/PlayCircleFilledWhiteRounded'
+import { FixedSizeList as VirtualList } from 'react-window'
+import LazyImage from './LazyImage'
 import { formatDuration } from '../utils/helpers'
 
+const ROW_HEIGHT = 74
+
+const Row = memo(function Row({ index, style, data }) {
+  const video = data.videos[index]
+  const isCurrent = video.id === data.currentVideoId
+
+  return (
+    <Box style={style} sx={{ pr: 0.5 }}>
+      <ListItemButton
+        selected={isCurrent}
+        onClick={() => data.onSelectVideo(video.id)}
+        aria-label={`Play ${video.title}`}
+        sx={{
+          borderRadius: 1.5,
+          mb: 0.5,
+          alignItems: 'flex-start',
+          gap: 1,
+          minHeight: 72,
+          '&.Mui-selected': {
+            bgcolor: 'action.selected',
+          },
+        }}
+      >
+        <LazyImage
+          src={video.thumbnail}
+          alt={video.title}
+          width={84}
+          height={48}
+          sx={{
+            borderRadius: 1,
+            flexShrink: 0,
+            objectFit: 'cover',
+          }}
+        />
+
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography
+            sx={{
+              fontSize: '0.92rem',
+              lineHeight: 1.3,
+              mb: 0.3,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {video.title}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {formatDuration(video.duration)}
+          </Typography>
+        </Box>
+
+        {isCurrent && <PlayCircleFilledWhiteRoundedIcon color="primary" fontSize="small" aria-label="Currently playing" />}
+      </ListItemButton>
+    </Box>
+  )
+})
+
 function VideoList({ open, onClose, videos, currentVideoId, category, onSelectVideo }) {
+  const virtualHeight = useMemo(() => {
+    return Math.min(videos.length * ROW_HEIGHT, 56 * 16)
+  }, [videos.length])
+
+  const rowData = useMemo(
+    () => ({ videos, currentVideoId, onSelectVideo }),
+    [videos, currentVideoId, onSelectVideo],
+  )
+
   return (
     <Drawer
       anchor="bottom"
@@ -52,69 +123,20 @@ function VideoList({ open, onClose, videos, currentVideoId, category, onSelectVi
           <Chip size="small" color="primary" label={category} />
         </Stack>
 
-        <List
-          disablePadding
-          sx={{
-            maxHeight: '56vh',
-            overflowY: 'auto',
-            scrollBehavior: 'smooth',
-            pr: 0.5,
-          }}
-        >
-          {videos.map((video) => {
-            const isCurrent = video.id === currentVideoId
-
-            return (
-              <ListItemButton
-                key={video.id}
-                selected={isCurrent}
-                onClick={() => onSelectVideo(video.id)}
-                sx={{
-                  borderRadius: 1.5,
-                  mb: 0.5,
-                  alignItems: 'flex-start',
-                  gap: 1,
-                  minHeight: 72,
-                  '&.Mui-selected': {
-                    bgcolor: 'action.selected',
-                  },
-                }}
-              >
-                <Avatar
-                  variant="rounded"
-                  src={video.thumbnail}
-                  alt={video.title}
-                  sx={{ width: 84, height: 48, flexShrink: 0, borderRadius: 1 }}
-                />
-
-                <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography
-                    sx={{
-                      fontSize: '0.92rem',
-                      lineHeight: 1.3,
-                      mb: 0.3,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {video.title}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {formatDuration(video.duration)}
-                  </Typography>
-                </Box>
-
-                {isCurrent && <PlayCircleFilledWhiteRoundedIcon color="primary" fontSize="small" />}
-              </ListItemButton>
-            )
-          })}
-        </List>
+        <Box sx={{ maxHeight: '56vh', scrollBehavior: 'smooth' }}>
+          <VirtualList
+            height={Math.max(virtualHeight, ROW_HEIGHT)}
+            width="100%"
+            itemCount={videos.length}
+            itemSize={ROW_HEIGHT}
+            itemData={rowData}
+          >
+            {Row}
+          </VirtualList>
+        </Box>
       </Box>
     </Drawer>
   )
 }
 
-export default VideoList
+export default memo(VideoList)

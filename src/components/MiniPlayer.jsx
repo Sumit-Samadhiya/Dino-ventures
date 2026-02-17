@@ -66,6 +66,8 @@ function MiniPlayer({ data, onClose, onRestore, onStateUpdate }) {
     <Box
       {...gestureHandlers}
       onClick={onRestore}
+      role="button"
+      aria-label="Restore mini player"
       sx={{
         position: 'fixed',
         left: { xs: 8, sm: 16, md: 24 },
@@ -124,11 +126,11 @@ function MiniPlayer({ data, onClose, onRestore, onStateUpdate }) {
           </Typography>
         </Box>
 
-        <IconButton onClick={handlePlayPause} sx={{ width: 44, height: 44 }}>
+        <IconButton aria-label={data.isPlaying ? 'Pause mini player video' : 'Play mini player video'} onClick={handlePlayPause} sx={{ width: 44, height: 44, transition: 'transform 140ms ease', '&:active': { transform: 'scale(0.93)' } }}>
           {data.isPlaying ? <PauseRoundedIcon /> : <PlayArrowRoundedIcon />}
         </IconButton>
 
-        <IconButton onClick={handleClose} sx={{ width: 44, height: 44 }}>
+        <IconButton aria-label="Close mini player" onClick={handleClose} sx={{ width: 44, height: 44, transition: 'transform 140ms ease', '&:active': { transform: 'scale(0.93)' } }}>
           <CloseRoundedIcon />
         </IconButton>
       </Stack>

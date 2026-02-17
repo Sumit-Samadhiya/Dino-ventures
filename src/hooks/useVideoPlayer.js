@@ -5,6 +5,9 @@ function useVideoPlayer(videoRef) {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(1)
+  const [hasEnded, setHasEnded] = useState(false)
+  const [isBuffering, setIsBuffering] = useState(false)
+  const [error, setError] = useState('')
 
   const play = useCallback(async () => {
     if (!videoRef.current) {
@@ -13,8 +16,11 @@ function useVideoPlayer(videoRef) {
 
     try {
       await videoRef.current.play()
+      setError('')
+      setHasEnded(false)
     } catch {
       setIsPlaying(false)
+      setError('Playback was interrupted. Please try again.')
     }
   }, [videoRef])
 
@@ -35,6 +41,9 @@ function useVideoPlayer(videoRef) {
       const boundedTime = Math.min(Math.max(time, 0), duration || 0)
       videoRef.current.currentTime = boundedTime
       setCurrentTime(boundedTime)
+      if (boundedTime < (duration || 0)) {
+        setHasEnded(false)
+      }
     },
     [duration, videoRef],
   )
@@ -61,6 +70,16 @@ function useVideoPlayer(videoRef) {
     [videoRef],
   )
 
+  const retry = useCallback(() => {
+    if (!videoRef.current) {
+      return
+    }
+
+    setError('')
+    videoRef.current.load()
+    play()
+  }, [play, videoRef])
+
   useEffect(() => {
     const video = videoRef.current
     if (!video) {
@@ -69,12 +88,36 @@ function useVideoPlayer(videoRef) {
 
     const handlePlay = () => setIsPlaying(true)
     const handlePause = () => setIsPlaying(false)
-    const handleTimeUpdate = () => setCurrentTime(video.currentTime)
-    const handleLoadedMetadata = () => setDuration(video.duration || 0)
+    const handleTimeUpdate = () => {
+      setCurrentTime(video.currentTime)
+      if (video.currentTime < (video.duration || 0)) {
+        setHasEnded(false)
+      }
+    }
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration || 0)
+      setHasEnded(false)
+      setIsBuffering(false)
+    }
     const handleVolumeChange = () => setVolume(video.volume)
+    const handleWaiting = () => setIsBuffering(true)
+    const handleCanPlay = () => {
+      setIsBuffering(false)
+      setError('')
+    }
+    const handleStalled = () => {
+      setIsBuffering(true)
+      setError('Network is unstable. Trying to recover...')
+    }
+    const handleError = () => {
+      setIsPlaying(false)
+      setIsBuffering(false)
+      setError('Unable to load this video. Check your connection and retry.')
+    }
     const handleEnded = () => {
       setIsPlaying(false)
       setCurrentTime(video.duration || 0)
+      setHasEnded(true)
     }
 
     video.addEventListener('play', handlePlay)
@@ -83,6 +126,11 @@ function useVideoPlayer(videoRef) {
     video.addEventListener('loadedmetadata', handleLoadedMetadata)
     video.addEventListener('durationchange', handleLoadedMetadata)
     video.addEventListener('volumechange', handleVolumeChange)
+    video.addEventListener('waiting', handleWaiting)
+    video.addEventListener('canplay', handleCanPlay)
+    video.addEventListener('playing', handleCanPlay)
+    video.addEventListener('stalled', handleStalled)
+    video.addEventListener('error', handleError)
     video.addEventListener('ended', handleEnded)
 
     return () => {
@@ -92,6 +140,11 @@ function useVideoPlayer(videoRef) {
       video.removeEventListener('loadedmetadata', handleLoadedMetadata)
       video.removeEventListener('durationchange', handleLoadedMetadata)
       video.removeEventListener('volumechange', handleVolumeChange)
+      video.removeEventListener('waiting', handleWaiting)
+      video.removeEventListener('canplay', handleCanPlay)
+      video.removeEventListener('playing', handleCanPlay)
+      video.removeEventListener('stalled', handleStalled)
+      video.removeEventListener('error', handleError)
       video.removeEventListener('ended', handleEnded)
     }
   }, [videoRef])
@@ -132,12 +185,16 @@ function useVideoPlayer(videoRef) {
     currentTime,
     duration,
     volume,
+    hasEnded,
+    isBuffering,
+    error,
     play,
     pause,
     seek,
     skipForward,
     skipBackward,
     setPlayerVolume,
+    retry,
   }
 }
 

@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Box, Skeleton, Typography } from '@mui/material'
 import VideoCard from './VideoCard'
 
@@ -45,4 +46,4 @@ function CategorySection({ category, videos, isLoading }) {
   )
 }
 
-export default CategorySection
+export default memo(CategorySection)

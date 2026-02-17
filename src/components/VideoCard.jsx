@@ -1,5 +1,7 @@
-import { Box, Card, CardActionArea, CardContent, CardMedia, Chip, Typography } from '@mui/material'
+import { memo } from 'react'
+import { Box, Card, CardActionArea, CardContent, Chip, Typography } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
+import LazyImage from './LazyImage'
 import { formatDuration } from '../utils/helpers'
 
 const categoryColorMap = {
@@ -23,14 +25,15 @@ function VideoCard({ video }) {
         },
       }}
     >
-      <CardActionArea component={RouterLink} to={`/player/${video.id}`} sx={{ height: '100%' }}>
+      <CardActionArea component={RouterLink} to={`/player/${video.id}`} aria-label={`Open video ${video.title}`} sx={{ height: '100%' }}>
         <Box sx={{ position: 'relative', overflow: 'hidden' }}>
-          <CardMedia
-            component="img"
-            image={video.thumbnail}
+          <LazyImage
+            src={video.thumbnail}
             alt={video.title}
             sx={{
+              width: '100%',
               aspectRatio: '16 / 9',
+              objectFit: 'cover',
               transition: 'transform 260ms ease',
               '.MuiCard-root:hover &': {
                 transform: 'scale(1.04)',
@@ -77,7 +80,7 @@ function VideoCard({ video }) {
             size="small"
             label={video.category}
             color={categoryColorMap[video.category] ?? 'default'}
-            sx={{ fontWeight: 600 }}
+            sx={{ fontWeight: 600, transition: 'transform 140ms ease', '&:active': { transform: 'scale(0.97)' } }}
           />
         </CardContent>
       </CardActionArea>
@@ -85,4 +88,4 @@ function VideoCard({ video }) {
   )
 }
 
-export default VideoCard
+export default memo(VideoCard)

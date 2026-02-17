@@ -4,10 +4,12 @@ import { Box, Button, Chip, Stack, Typography } from '@mui/material'
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import VideoPlayer from '../components/VideoPlayer'
 import VideoList from '../components/VideoList'
+import AutoPlayCountdown from '../components/AutoPlayCountdown'
 import { videos } from '../data/videos'
 import { formatDuration } from '../utils/helpers'
 import useVideoPlayer from '../hooks/useVideoPlayer'
 import useGestures from '../hooks/useGestures'
+import useAutoPlay from '../hooks/useAutoPlay'
 
 function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
   const { id } = useParams()
@@ -34,9 +36,34 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
     return videos.filter((item) => item.category === video.category)
   }, [video])
 
+  const nextVideo = useMemo(() => {
+    if (!video || !categoryVideos.length) {
+      return null
+    }
+
+    const currentIndex = categoryVideos.findIndex((item) => item.id === video.id)
+    if (currentIndex === -1) {
+      return categoryVideos[0]
+    }
+
+    const nextIndex = (currentIndex + 1) % categoryVideos.length
+    return categoryVideos[nextIndex]
+  }, [categoryVideos, video])
+
   useEffect(() => {
     onCloseMiniPlayer()
   }, [currentVideoId, onCloseMiniPlayer])
+
+  const autoPlayState = useAutoPlay({
+    enabled: playerState.hasEnded && Boolean(nextVideo),
+    nextVideo,
+    onAutoPlay: (upNextVideo) => {
+      if (upNextVideo) {
+        handleSwitchVideo(upNextVideo.id)
+      }
+    },
+    durationSeconds: 2,
+  })
 
   const gestureHandlers = useGestures({
     onSwipeUp: () => setIsVideoListOpen(true),
@@ -159,6 +186,14 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
 
         <VideoPlayer video={video} player={{ ...playerState, videoRef }} />
 
+        {autoPlayState.isVisible && nextVideo && (
+          <AutoPlayCountdown
+            nextVideo={nextVideo}
+            secondsLeft={autoPlayState.secondsLeft}
+            onCancel={autoPlayState.cancel}
+          />
+        )}
+
         {dragOffsetY > 0 && (
           <Box
             sx={{
@@ -178,6 +213,12 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
       <Typography variant="caption" color="text.secondary" sx={{ mt: 0.8, display: 'inline-block' }}>
         Swipe up or scroll down to open videos in this category
       </Typography>
+
+      {(playerState.isBuffering || playerState.error) && (
+        <Typography role="status" aria-live="polite" variant="caption" color={playerState.error ? 'error.main' : 'text.secondary'} sx={{ ml: 1, display: 'inline-block' }}>
+          {playerState.error || 'Buffering video...'}
+        </Typography>
+      )}
 
       <Box sx={{ mt: 1.5 }}>
         <Typography

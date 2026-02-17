@@ -94,6 +94,7 @@ function PlayerControls({
           max={duration || 0}
           value={currentTime}
           onChange={(_, value) => onSeek(Number(value))}
+          onChangeCommitted={(_, value) => onSeek(Number(value))}
           sx={{
             color: 'primary.main',
             '& .MuiSlider-thumb': {
@@ -118,15 +119,15 @@ function PlayerControls({
 
       <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.25}>
         <Stack direction="row" alignItems="center" spacing={0.25}>
-          <IconButton aria-label="Skip backward" onClick={onSkipBackward} sx={{ width: 44, height: 44 }}>
+          <IconButton aria-label="Skip backward 10 seconds" onClick={onSkipBackward} sx={{ width: 44, height: 44, transition: 'transform 140ms ease', '&:active': { transform: 'scale(0.93)' } }}>
             <Replay10RoundedIcon />
           </IconButton>
 
-          <IconButton aria-label="Play pause" onClick={onPlayPause} sx={{ width: 44, height: 44 }}>
+          <IconButton aria-label={isPlaying ? 'Pause video' : 'Play video'} onClick={onPlayPause} sx={{ width: 44, height: 44, transition: 'transform 140ms ease', '&:active': { transform: 'scale(0.93)' } }}>
             {isPlaying ? <PauseRoundedIcon /> : <PlayArrowRoundedIcon />}
           </IconButton>
 
-          <IconButton aria-label="Skip forward" onClick={onSkipForward} sx={{ width: 44, height: 44 }}>
+          <IconButton aria-label="Skip forward 10 seconds" onClick={onSkipForward} sx={{ width: 44, height: 44, transition: 'transform 140ms ease', '&:active': { transform: 'scale(0.93)' } }}>
             <Forward10RoundedIcon />
           </IconButton>
 
@@ -146,7 +147,7 @@ function PlayerControls({
             onChange={(_, value) => onVolumeChange(Number(value))}
             sx={{ maxWidth: { xs: 60, sm: 100 } }}
           />
-          <IconButton aria-label="Fullscreen" onClick={onToggleFullscreen} sx={{ width: 44, height: 44 }}>
+          <IconButton aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} onClick={onToggleFullscreen} sx={{ width: 44, height: 44, transition: 'transform 140ms ease', '&:active': { transform: 'scale(0.93)' } }}>
             {isFullscreen ? <FullscreenExitRoundedIcon /> : <FullscreenRoundedIcon />}
           </IconButton>
         </Stack>
