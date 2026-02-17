@@ -1,35 +1,84 @@
-import { Card, CardActionArea, CardContent, CardMedia, Chip, Stack, Typography } from '@mui/material'
-import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded'
+import { Box, Card, CardActionArea, CardContent, CardMedia, Chip, Typography } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
 import { formatDuration } from '../utils/helpers'
 
+const categoryColorMap = {
+  Technology: 'info',
+  Gaming: 'success',
+  Music: 'secondary',
+  Education: 'warning',
+  Entertainment: 'primary',
+}
+
 function VideoCard({ video }) {
   return (
-    <Card sx={{ height: '100%', backgroundColor: 'background.paper' }}>
+    <Card
+      sx={{
+        height: '100%',
+        backgroundColor: 'background.paper',
+        transition: 'transform 220ms ease, box-shadow 220ms ease',
+        '&:hover': {
+          transform: 'translateY(-6px)',
+          boxShadow: 8,
+        },
+      }}
+    >
       <CardActionArea component={RouterLink} to={`/player/${video.id}`} sx={{ height: '100%' }}>
-        <CardMedia component="img" image={video.thumbnail} alt={video.title} sx={{ aspectRatio: '16 / 9' }} />
+        <Box sx={{ position: 'relative', overflow: 'hidden' }}>
+          <CardMedia
+            component="img"
+            image={video.thumbnail}
+            alt={video.title}
+            sx={{
+              aspectRatio: '16 / 9',
+              transition: 'transform 260ms ease',
+              '.MuiCard-root:hover &': {
+                transform: 'scale(1.04)',
+              },
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              right: 8,
+              bottom: 8,
+              bgcolor: 'rgba(0, 0, 0, 0.72)',
+              color: 'common.white',
+              px: 0.8,
+              py: 0.2,
+              borderRadius: 1,
+              fontSize: '0.74rem',
+              fontWeight: 600,
+              lineHeight: 1.2,
+            }}
+          >
+            {formatDuration(video.duration)}
+          </Box>
+        </Box>
+
         <CardContent>
           <Typography
             variant="h6"
             sx={(theme) => ({
               ...theme.typography.videoTitle,
               mb: 1,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              minHeight: '2.7em',
             })}
           >
             {video.title}
           </Typography>
 
-          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-            <Chip size="small" icon={<PlayArrowRoundedIcon />} label={video.category} color="primary" />
-            <Typography
-              sx={(theme) => ({
-                ...theme.typography.videoMeta,
-                color: 'text.secondary',
-              })}
-            >
-              {formatDuration(video.duration)}
-            </Typography>
-          </Stack>
+          <Chip
+            size="small"
+            label={video.category}
+            color={categoryColorMap[video.category] ?? 'default'}
+            sx={{ fontWeight: 600 }}
+          />
         </CardContent>
       </CardActionArea>
     </Card>
