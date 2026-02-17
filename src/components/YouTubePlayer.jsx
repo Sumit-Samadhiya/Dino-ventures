@@ -1,32 +1,66 @@
 import { useEffect, useRef, useState } from 'react'
-import { Box, CircularProgress } from '@mui/material'
+import { Box, CircularProgress, Typography, Alert } from '@mui/material'
 
 function YouTubePlayer({ videoId, isPlaying, onReady, onStateChange }) {
   const containerRef = useRef(null)
   const playerRef = useRef(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const apiRetryCountRef = useRef(0)
+  const [isLoading, setIsLoading] = useState(!videoId)
+  const [error, setError] = useState('')
+
+  // YouTube error codes
+  const youtubeErrorMessages = {
+    2: 'Invalid video parameter',
+    5: 'HTML5 player error',
+    100: 'Video not found',
+    101: 'Video owner does not allow embedding',
+    150: 'Video owner does not allow embedding',
+  }
 
   useEffect(() => {
-    if (!videoId) return
+    if (!videoId) {
+      console.warn('No video ID provided to YouTubePlayer')
+      setError('No video ID provided')
+      return
+    }
 
     const initializePlayer = () => {
       if (!window.YT || !window.YT.Player) {
-        console.warn('YouTube API not loaded yet, retrying...')
-        setTimeout(initializePlayer, 500)
+        if (apiRetryCountRef.current < 5) {
+          console.log('YouTube API not ready, retrying... attempt', apiRetryCountRef.current + 1)
+          apiRetryCountRef.current += 1
+          setTimeout(initializePlayer, 500)
+        } else {
+          console.error('YouTube API failed to load after multiple attempts')
+          setError('YouTube API failed to load')
+          setIsLoading(false)
+        }
         return
       }
 
-      if (!containerRef.current) return
+      apiRetryCountRef.current = 0
+
+      if (!containerRef.current) {
+        console.error('Container ref not available')
+        return
+      }
+
       if (playerRef.current) {
-        // Update existing player with new video
-        playerRef.current.cueVideoById(videoId)
-        if (isPlaying) {
-          playerRef.current.playVideo?.()
+        console.log('Updating existing player with video ID:', videoId)
+        try {
+          playerRef.current.cueVideoById(videoId)
+          if (isPlaying) {
+            playerRef.current.playVideo?.()
+          }
+        } catch (err) {
+          console.error('Error updating player:', err)
+          setError('Failed to load video')
         }
         return
       }
 
       try {
+        console.log('Creating new YouTube player for video ID:', videoId)
         playerRef.current = new window.YT.Player(containerRef.current, {
           height: '100%',
           width: '100%',
@@ -41,31 +75,40 @@ function YouTubePlayer({ videoId, isPlaying, onReady, onStateChange }) {
           },
           events: {
             onReady: (event) => {
+              console.log('YouTube player ready for video:', videoId)
               setIsLoading(false)
+              setError('')
               if (onReady) onReady(event)
             },
             onStateChange: (event) => {
+              console.log('YouTube player state changed:', event.data)
               if (onStateChange) onStateChange(event)
             },
             onError: (event) => {
-              console.error('YouTube error:', event.data)
+              const errorCode = event.data
+              const errorMsg = youtubeErrorMessages[errorCode] || 'Unknown YouTube error'
+              console.error('YouTube player error:', errorCode, errorMsg)
+              setError(errorMsg)
               setIsLoading(false)
             },
           },
         })
       } catch (err) {
         console.error('Failed to initialize YouTube player:', err)
+        setError('Failed to initialize YouTube player')
         setIsLoading(false)
       }
     }
 
     // Load YouTube API if not already present
     if (!window.YT) {
+      console.log('YouTube API not found, loading...')
       const tag = document.createElement('script')
       tag.src = 'https://www.youtube.com/iframe_api'
       tag.async = true
 
       window.onYouTubeIframeAPIReady = () => {
+        console.log('YouTube IFrame API ready')
         initializePlayer()
       }
 
@@ -84,13 +127,43 @@ function YouTubePlayer({ videoId, isPlaying, onReady, onStateChange }) {
   useEffect(() => {
     if (!playerRef.current || !window.YT) return
 
-    const state = playerRef.current.getPlayerState?.()
-    if (isPlaying && state !== window.YT.PlayerState.PLAYING && state !== window.YT.PlayerState.BUFFERING) {
-      playerRef.current.playVideo?.()
-    } else if (!isPlaying && state === window.YT.PlayerState.PLAYING) {
-      playerRef.current.pauseVideo?.()
+    try {
+      const state = playerRef.current.getPlayerState?.()
+      if (isPlaying && state !== window.YT.PlayerState.PLAYING && state !== window.YT.PlayerState.BUFFERING) {
+        playerRef.current.playVideo?.()
+      } else if (!isPlaying && state === window.YT.PlayerState.PLAYING) {
+        playerRef.current.pauseVideo?.()
+      }
+    } catch (err) {
+      console.error('Error syncing player state:', err)
     }
   }, [isPlaying])
+
+  if (error) {
+    return (
+      <Box
+        sx={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          backgroundColor: '#000',
+          overflow: 'hidden',
+          borderRadius: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 2,
+        }}
+      >
+        <Alert severity="error" sx={{ width: '100%' }}>
+          <Typography variant="body2">Failed to load YouTube video (ID: {videoId})</Typography>
+          <Typography variant="caption" color="error">
+            {error}
+          </Typography>
+        </Alert>
+      </Box>
+    )
+  }
 
   return (
     <Box

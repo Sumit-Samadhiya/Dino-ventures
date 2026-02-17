@@ -12,11 +12,36 @@ function VideoPlayer({ video, player }) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [skipFeedback, setSkipFeedback] = useState(null)
   const [youtubePlayer, setYoutubePlayer] = useState(null)
+  const [playerError, setPlayerError] = useState('')
   const [youtubeState, setYoutubeState] = useState({
     currentTime: 0,
     duration: 0,
     isPlaying: false,
   })
+
+  // Safety check for video object
+  if (!video) {
+    return (
+      <Box
+        sx={{
+          position: 'relative',
+          width: '100%',
+          aspectRatio: '16 / 9',
+          bgcolor: 'black',
+          borderRadius: 2,
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 0 42px rgba(255, 0, 0, 0.18)',
+        }}
+      >
+        <Typography color="error" variant="body1">
+          Video data not found, please go back and select a video again
+        </Typography>
+      </Box>
+    )
+  }
 
   const getYoutubeVideoId = (url) => {
     if (!url) return null
@@ -26,7 +51,11 @@ function VideoPlayer({ video, player }) {
 
   const youtubeVideoId = useMemo(() => {
     if (video?.mediaType === 'YOUTUBE') {
-      return getYoutubeVideoId(video.videoUrl)
+      const id = getYoutubeVideoId(video.videoUrl)
+      if (id) {
+        console.log('Extracted YouTube ID:', id, 'from URL:', video.videoUrl)
+      }
+      return id
     }
     return null
   }, [video])

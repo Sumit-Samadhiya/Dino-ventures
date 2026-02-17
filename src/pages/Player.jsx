@@ -24,10 +24,22 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' })
 
   useEffect(() => {
-    setCurrentVideoId(id)
+    if (id) {
+      // Decode URL parameter in case it's encoded
+      const decodedId = decodeURIComponent(id)
+      setCurrentVideoId(decodedId)
+      console.log('Player: URL ID:', id, 'Decoded ID:', decodedId)
+    }
   }, [id])
 
-  const video = useMemo(() => videos.find((item) => item.id === currentVideoId), [currentVideoId])
+  const video = useMemo(() => {
+    const foundVideo = videos.find((item) => item.id === currentVideoId)
+    if (!foundVideo) {
+      console.warn('Video not found for ID:', currentVideoId)
+      console.log('Available videos:', videos.map(v => ({ id: v.id, title: v.title })))
+    }
+    return foundVideo
+  }, [currentVideoId])
 
   const categoryVideos = useMemo(() => {
     if (!video) {
