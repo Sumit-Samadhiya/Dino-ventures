@@ -1,23 +1,60 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Box, Button, Chip, Stack, Typography } from '@mui/material'
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import VideoPlayer from '../components/VideoPlayer'
+import VideoList from '../components/VideoList'
 import { videos } from '../data/videos'
 import { formatDuration } from '../utils/helpers'
 import useVideoPlayer from '../hooks/useVideoPlayer'
+import useGestures from '../hooks/useGestures'
 
 function Player() {
   const { id } = useParams()
   const navigate = useNavigate()
   const videoRef = useRef(null)
   const playerState = useVideoPlayer(videoRef)
-
-  const video = useMemo(() => videos.find((item) => item.id === id), [id])
+  const [currentVideoId, setCurrentVideoId] = useState(id)
+  const [isVideoListOpen, setIsVideoListOpen] = useState(false)
 
   useEffect(() => {
-    playerState.play()
+    setCurrentVideoId(id)
   }, [id])
+
+  const video = useMemo(() => videos.find((item) => item.id === currentVideoId), [currentVideoId])
+
+  const categoryVideos = useMemo(() => {
+    if (!video) {
+      return []
+    }
+
+    return videos.filter((item) => item.category === video.category)
+  }, [video])
+
+  const gestureHandlers = useGestures({
+    onSwipeUp: () => setIsVideoListOpen(true),
+    onSwipeDown: () => setIsVideoListOpen(false),
+    onScrollDown: () => setIsVideoListOpen(true),
+  })
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      playerState.play()
+    }, 0)
+
+    return () => clearTimeout(timer)
+  }, [currentVideoId, playerState.play])
+
+  const handleSwitchVideo = (nextVideoId) => {
+    if (nextVideoId === currentVideoId) {
+      setIsVideoListOpen(false)
+      return
+    }
+
+    setCurrentVideoId(nextVideoId)
+    navigate(`/player/${nextVideoId}`)
+    setIsVideoListOpen(false)
+  }
 
   if (!video) {
     return (
@@ -41,7 +78,13 @@ function Player() {
         Back to Home
       </Button>
 
-      <VideoPlayer video={video} player={{ ...playerState, videoRef }} />
+      <Box {...gestureHandlers} sx={{ touchAction: 'pan-y' }}>
+        <VideoPlayer video={video} player={{ ...playerState, videoRef }} />
+      </Box>
+
+      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.8, display: 'inline-block' }}>
+        Swipe up or scroll down to open videos in this category
+      </Typography>
 
       <Box sx={{ mt: 1.5 }}>
         <Typography
@@ -60,6 +103,15 @@ function Player() {
           <Chip variant="outlined" label={formatDuration(video.duration)} />
         </Stack>
       </Box>
+
+      <VideoList
+        open={isVideoListOpen}
+        onClose={() => setIsVideoListOpen(false)}
+        videos={categoryVideos}
+        currentVideoId={video.id}
+        category={video.category}
+        onSelectVideo={handleSwitchVideo}
+      />
     </Box>
   )
 }
