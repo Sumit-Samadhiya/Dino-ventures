@@ -1,5 +1,13 @@
 import { createTheme } from '@mui/material/styles'
 
+export const categoryColors = {
+  Technology: { primary: '#2196F3', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+  Gaming: { primary: '#9C27B0', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+  Music: { primary: '#E91E63', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
+  Education: { primary: '#FF9800', gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
+  Entertainment: { primary: '#F44336', gradient: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)' },
+}
+
 const theme = createTheme({
   breakpoints: {
     values: {
@@ -120,6 +128,9 @@ const theme = createTheme({
         },
       },
     },
+  },
+  custom: {
+    categoryColors,
   },
 })
 

@@ -1,9 +1,11 @@
-import { memo } from 'react'
+import { memo, useRef, useState } from 'react'
 import { Box, Card, CardActionArea, CardContent, Chip, Stack, Typography } from '@mui/material'
 import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded'
+import SmartDisplayRoundedIcon from '@mui/icons-material/SmartDisplayRounded'
 import { Link as RouterLink } from 'react-router-dom'
 import LazyImage from './LazyImage'
 import { formatDuration } from '../utils/helpers'
+import { categoryColors } from '../styles/theme'
 
 const categoryColorMap = {
   Technology: 'info',
@@ -13,15 +15,34 @@ const categoryColorMap = {
   Entertainment: 'primary',
 }
 
-const categoryGradientMap = {
-  Technology: 'linear-gradient(135deg, #3EA6FF, #1E88E5)',
-  Gaming: 'linear-gradient(135deg, #8E24AA, #5E35B1)',
-  Music: 'linear-gradient(135deg, #EC407A, #D81B60)',
-  Education: 'linear-gradient(135deg, #43A047, #2E7D32)',
-  Entertainment: 'linear-gradient(135deg, #FF7043, #F4511E)',
-}
-
 function VideoCard({ video }) {
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false)
+  const previewRef = useRef(null)
+  const canPreview = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches
+
+  const handlePreviewStart = async () => {
+    if (!canPreview || !previewRef.current) {
+      return
+    }
+
+    setIsPreviewVisible(true)
+    try {
+      previewRef.current.currentTime = 0
+      await previewRef.current.play()
+    } catch {
+      setIsPreviewVisible(false)
+    }
+  }
+
+  const handlePreviewStop = () => {
+    if (!previewRef.current) {
+      return
+    }
+
+    previewRef.current.pause()
+    setIsPreviewVisible(false)
+  }
+
   return (
     <Card
       sx={{
@@ -38,7 +59,14 @@ function VideoCard({ video }) {
         },
       }}
     >
-      <CardActionArea component={RouterLink} to={`/player/${video.id}`} aria-label={`Open video ${video.title}`} sx={{ height: '100%', alignItems: 'stretch' }}>
+      <CardActionArea
+        component={RouterLink}
+        to={`/player/${video.id}`}
+        aria-label={`Open video ${video.title}`}
+        onMouseEnter={handlePreviewStart}
+        onMouseLeave={handlePreviewStop}
+        sx={{ height: '100%', alignItems: 'stretch' }}
+      >
         <Box sx={{ position: 'relative', overflow: 'hidden' }}>
           <LazyImage
             src={video.thumbnail}
@@ -48,10 +76,32 @@ function VideoCard({ video }) {
               aspectRatio: '16 / 9',
               objectFit: 'cover',
               borderRadius: 1,
+              viewTransitionName: `video-thumb-${video.id}`,
               transition: 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1)',
               '.MuiCard-root:hover &': {
                 transform: 'scale(1.02)',
               },
+            }}
+          />
+
+          <Box
+            component="video"
+            ref={previewRef}
+            src={video.videoUrl}
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-hidden
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: isPreviewVisible ? 1 : 0,
+              transition: 'opacity 220ms cubic-bezier(0.4,0,0.2,1)',
+              pointerEvents: 'none',
             }}
           />
 
@@ -68,9 +118,17 @@ function VideoCard({ video }) {
               fontWeight: 600,
               lineHeight: 1,
               letterSpacing: 0.2,
-              background: categoryGradientMap[video.category] ?? 'linear-gradient(135deg, #606060, #3F3F3F)',
+              background: categoryColors[video.category]?.gradient ?? 'linear-gradient(135deg, #606060, #3F3F3F)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.35,
+              transition: 'transform 180ms cubic-bezier(0.4,0,0.2,1)',
+              '.MuiCard-root:hover &': {
+                transform: 'translateY(-1px)',
+              },
             }}
           >
+            <SmartDisplayRoundedIcon sx={{ fontSize: 12 }} />
             {video.category}
           </Box>
 

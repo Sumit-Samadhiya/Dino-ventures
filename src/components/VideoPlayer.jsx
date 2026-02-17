@@ -120,8 +120,23 @@ function VideoPlayer({ video, player }) {
         bgcolor: 'black',
         borderRadius: 2,
         overflow: 'hidden',
+        boxShadow: '0 0 42px rgba(255, 0, 0, 0.18)',
       }}
     >
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: -18,
+          backgroundImage: `url(${video.thumbnail})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(26px) saturate(1.05)',
+          opacity: 0.24,
+          transform: 'scale(1.1)',
+          pointerEvents: 'none',
+        }}
+      />
+
       <Box
         component="video"
         ref={player.videoRef}
@@ -132,12 +147,18 @@ function VideoPlayer({ video, player }) {
         controls={false}
         aria-label={video.title}
         sx={{
+          position: 'relative',
+          zIndex: 1,
           width: '100%',
           height: '100%',
           objectFit: 'contain',
           display: 'block',
+          viewTransitionName: `video-thumb-${video.id}`,
         }}
       />
+
+      <Box sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: '8%', bgcolor: 'rgba(0,0,0,0.58)', zIndex: 2, pointerEvents: 'none' }} />
+      <Box sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '8%', bgcolor: 'rgba(0,0,0,0.58)', zIndex: 2, pointerEvents: 'none' }} />
 
       {skipFeedbackType && <SkipAnimation type={skipFeedbackType} />}
 

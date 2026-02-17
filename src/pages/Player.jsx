@@ -154,9 +154,23 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
 
   const dragProgress = Math.min(dragOffsetY / 150, 1)
 
+  const handleBackToHome = () => {
+    const currentElement = videoRef.current
+    onMinimizePlayer({
+      videoId: video.id,
+      title: video.title,
+      thumbnail: video.thumbnail,
+      videoUrl: video.videoUrl,
+      currentTime: currentElement?.currentTime ?? playerState.currentTime,
+      isPlaying: currentElement ? !currentElement.paused : playerState.isPlaying,
+      volume: currentElement?.volume ?? playerState.volume,
+    })
+    navigate('/')
+  }
+
   return (
     <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 2.5, sm: 4 } }}>
-      <Button variant="outlined" startIcon={<ArrowBackRoundedIcon />} onClick={() => navigate('/')} sx={{ mb: 1.5 }}>
+      <Button variant="outlined" startIcon={<ArrowBackRoundedIcon />} onClick={handleBackToHome} sx={{ mb: 1.5 }}>
         Back to Home
       </Button>
 

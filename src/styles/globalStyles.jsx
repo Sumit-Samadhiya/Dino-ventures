@@ -22,7 +22,7 @@ function AppGlobalStyles() {
           height: 8,
         },
         '::-webkit-scrollbar-thumb': {
-          background: 'rgba(255,255,255,0.2)',
+          background: 'linear-gradient(180deg, rgba(255,0,0,0.85), rgba(255,76,76,0.8))',
           borderRadius: 12,
         },
         '::-webkit-scrollbar-track': {
@@ -31,6 +31,12 @@ function AppGlobalStyles() {
         ':focus-visible': {
           outline: '2px solid #FF0000',
           outlineOffset: '2px',
+        },
+        '@media (max-width: 600px)': {
+          '::-webkit-scrollbar': {
+            width: 0,
+            height: 0,
+          },
         },
       }}
     />

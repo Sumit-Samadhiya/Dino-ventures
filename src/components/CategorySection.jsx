@@ -2,14 +2,50 @@ import { memo } from 'react'
 import { Box, Link, Skeleton, Stack, Typography } from '@mui/material'
 import VideoCard from './VideoCard'
 import { shimmer } from '../styles/animations'
+import { categoryColors } from '../styles/theme'
 
-function CategorySection({ category, videos, isLoading }) {
+function CategorySection({ category, videos, isLoading, parallaxOffset = 0, isFiltered = false, onFilterCategory }) {
   return (
-    <Box sx={{ pb: 3 }}>
+    <Box
+      sx={{
+        pb: 3,
+        transform: `translateY(${parallaxOffset}px)`,
+        transition: 'transform 220ms cubic-bezier(0.4,0,0.2,1)',
+        willChange: 'transform',
+      }}
+    >
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
-        <Typography variant="h6" sx={(theme) => ({ ...theme.typography.categoryLabel })}>
-          {category}
-        </Typography>
+        <Box
+          role="button"
+          tabIndex={0}
+          onClick={() => onFilterCategory?.(category)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              onFilterCategory?.(category)
+            }
+          }}
+          sx={{
+            px: 1.2,
+            py: 0.6,
+            borderRadius: 1.5,
+            cursor: 'pointer',
+            userSelect: 'none',
+            color: '#FFFFFF',
+            background: categoryColors[category]?.gradient ?? 'linear-gradient(135deg, #666, #333)',
+            boxShadow: isFiltered ? 8 : 2,
+            transition: 'transform 200ms cubic-bezier(0.4,0,0.2,1), box-shadow 200ms cubic-bezier(0.4,0,0.2,1), filter 200ms cubic-bezier(0.4,0,0.2,1)',
+            '&:hover': {
+              transform: 'translateY(-1px)',
+              boxShadow: 8,
+              filter: 'brightness(1.08)',
+            },
+          }}
+        >
+          <Typography variant="h6" sx={(theme) => ({ ...theme.typography.categoryLabel })}>
+            {category}
+          </Typography>
+        </Box>
         <Link href="#" underline="none" color="text.secondary" sx={{ fontSize: '0.82rem', fontWeight: 500 }}>
           See all
         </Link>
