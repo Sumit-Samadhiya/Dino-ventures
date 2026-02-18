@@ -19,6 +19,8 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
   const playerState = useVideoPlayer(videoRef)
   const [currentVideoId, setCurrentVideoId] = useState(id)
   const [isVideoListOpen, setIsVideoListOpen] = useState(false)
+  const [forceAutoPlayToken, setForceAutoPlayToken] = useState(0)
+  const [playerHasEnded, setPlayerHasEnded] = useState(false)
   const [dragOffsetY, setDragOffsetY] = useState(0)
   const [isDraggingDown, setIsDraggingDown] = useState(false)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' })
@@ -67,8 +69,20 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
     onCloseMiniPlayer()
   }, [currentVideoId, onCloseMiniPlayer])
 
+  useEffect(() => {
+    if (video?.mediaType === 'YOUTUBE') {
+      return
+    }
+
+    setPlayerHasEnded(playerState.hasEnded)
+  }, [playerState.hasEnded, video?.mediaType])
+
+  useEffect(() => {
+    setPlayerHasEnded(false)
+  }, [currentVideoId])
+
   const autoPlayState = useAutoPlay({
-    enabled: playerState.hasEnded && Boolean(nextVideo),
+    enabled: playerHasEnded && Boolean(nextVideo),
     nextVideo,
     onAutoPlay: (upNextVideo) => {
       if (upNextVideo) {
@@ -99,6 +113,7 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
           title: video.title,
           thumbnail: video.thumbnail,
           videoUrl: video.videoUrl,
+          mediaType: video.mediaType,
           currentTime: currentElement?.currentTime ?? playerState.currentTime,
           isPlaying: currentElement ? !currentElement.paused : playerState.isPlaying,
           volume: currentElement?.volume ?? playerState.volume,
@@ -142,13 +157,20 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
       return
     }
 
+    setForceAutoPlayToken((previous) => previous + 1)
+    setPlayerHasEnded(false)
     setCurrentVideoId(nextVideoId)
-    
-    // Smooth transition with slight delay for animation
-    setTimeout(() => {
-      navigate(`/player/${nextVideoId}`)
-    }, 50)
-    
+
+    const targetPath = `/player/${encodeURIComponent(nextVideoId)}`
+    const startViewTransition = document.startViewTransition?.bind(document)
+    if (startViewTransition) {
+      startViewTransition(() => {
+        navigate(targetPath)
+      })
+    } else {
+      navigate(targetPath)
+    }
+
     setIsVideoListOpen(false)
     setToast({ open: true, message: 'Switched to next video', severity: 'success' })
   }
@@ -170,6 +192,7 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
   }
 
   const dragProgress = Math.min(dragOffsetY / 150, 1)
+  const dragScale = 1 - Math.min(dragOffsetY / 900, 0.12)
 
   const handleBackToHome = () => {
     const currentElement = videoRef.current
@@ -178,6 +201,7 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
       title: video.title,
       thumbnail: video.thumbnail,
       videoUrl: video.videoUrl,
+      mediaType: video.mediaType,
       currentTime: currentElement?.currentTime ?? playerState.currentTime,
       isPlaying: currentElement ? !currentElement.paused : playerState.isPlaying,
       volume: currentElement?.volume ?? playerState.volume,
@@ -186,8 +210,13 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
   }
 
   return (
-    <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 2.5, sm: 4 } }}>
-      <Button variant="outlined" startIcon={<ArrowBackRoundedIcon />} onClick={handleBackToHome} sx={{ mb: 1.5 }}>
+    <Box sx={{ px: { xs: 1.5, sm: 3, md: 4 }, pb: { xs: 2.5, sm: 4 } }}>
+      <Button
+        variant="outlined"
+        startIcon={<ArrowBackRoundedIcon />}
+        onClick={handleBackToHome}
+        sx={{ mb: 1.5, width: { xs: '100%', sm: 'auto' } }}
+      >
         Back to Home
       </Button>
 
@@ -195,29 +224,46 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
         {...gestureHandlers}
         sx={{
           touchAction: 'pan-y',
-          transform: `translateY(${dragOffsetY}px)`,
+          transform: `translateY(${dragOffsetY}px) scale(${dragScale})`,
+          transformOrigin: 'top center',
           transition: isDraggingDown ? 'none' : 'transform 220ms ease',
           willChange: 'transform',
           position: 'relative',
+          opacity: 1 - Math.min(dragOffsetY / 1200, 0.15),
+          borderRadius: 2,
+          boxShadow: dragProgress > 0 ? 12 : 0,
+          backgroundColor: dragProgress > 0 ? 'rgba(15,15,15,0.65)' : 'transparent',
+          backdropFilter: dragProgress > 0 ? 'blur(6px)' : 'none',
         }}
       >
         <Box
           sx={{
-            width: 46,
+            width: { xs: 36, sm: 46 },
             height: 4,
             borderRadius: 99,
             bgcolor: 'text.secondary',
-            opacity: 0.6,
+            opacity: 0.55,
             mx: 'auto',
-            mb: 0.8,
+            mb: { xs: 0.5, sm: 0.8 },
           }}
         />
 
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 1 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: { xs: 'none', sm: 'block' }, textAlign: 'center', mb: 1 }}
+        >
           Drag down to minimize
         </Typography>
 
-        <VideoPlayer video={video} player={{ ...playerState, videoRef }} />
+        <Box sx={{ viewTransitionName: `video-thumb-${video.id}` }}>
+          <VideoPlayer
+            video={video}
+            player={{ ...playerState, videoRef }}
+            autoPlayToken={forceAutoPlayToken}
+            onEndedChange={setPlayerHasEnded}
+          />
+        </Box>
 
         {autoPlayState.isVisible && nextVideo && (
           <AutoPlayCountdown
@@ -263,6 +309,7 @@ function Player({ onMinimizePlayer, onCloseMiniPlayer }) {
             ...theme.typography.videoTitle,
             fontSize: { xs: '1.05rem', sm: '1.25rem' },
             mb: 1,
+            viewTransitionName: `video-title-${video.id}`,
           })}
         >
           {video.title}

@@ -4,6 +4,11 @@ function useAutoPlay({ enabled, nextVideo, onAutoPlay, durationSeconds = 2 }) {
   const [isVisible, setIsVisible] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(durationSeconds)
   const intervalRef = useRef(null)
+  const onAutoPlayRef = useRef(onAutoPlay)
+
+  useEffect(() => {
+    onAutoPlayRef.current = onAutoPlay
+  }, [onAutoPlay])
 
   const clearTimer = () => {
     if (intervalRef.current) {
@@ -36,12 +41,12 @@ function useAutoPlay({ enabled, nextVideo, onAutoPlay, durationSeconds = 2 }) {
       if (remaining <= 0) {
         clearTimer()
         setIsVisible(false)
-        onAutoPlay?.(nextVideo)
+        onAutoPlayRef.current?.(nextVideo)
       }
     }, 100)
 
     return () => clearTimer()
-  }, [durationSeconds, enabled, nextVideo, onAutoPlay])
+  }, [durationSeconds, enabled, nextVideo])
 
   return {
     isVisible,

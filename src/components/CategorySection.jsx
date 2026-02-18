@@ -4,7 +4,16 @@ import VideoCard from './VideoCard'
 import { shimmer } from '../styles/animations'
 import { categoryColors } from '../styles/theme'
 
-function CategorySection({ category, videos, isLoading, parallaxOffset = 0, isFiltered = false, onFilterCategory }) {
+function CategorySection({
+  category,
+  videos,
+  isLoading,
+  parallaxOffset = 0,
+  isFiltered = false,
+  onFilterCategory,
+  onSeeAll,
+  isExpanded = false,
+}) {
   return (
     <Box
       sx={{
@@ -46,8 +55,17 @@ function CategorySection({ category, videos, isLoading, parallaxOffset = 0, isFi
             {category}
           </Typography>
         </Box>
-        <Link href="#" underline="none" color="text.secondary" sx={{ fontSize: '0.82rem', fontWeight: 500 }}>
-          See all
+        <Link
+          href="#"
+          underline="none"
+          color="text.secondary"
+          onClick={(event) => {
+            event.preventDefault()
+            onSeeAll?.(category)
+          }}
+          sx={{ fontSize: '0.82rem', fontWeight: 500 }}
+        >
+          {isExpanded ? 'Collapse' : 'See all'}
         </Link>
       </Stack>
 
@@ -55,22 +73,25 @@ function CategorySection({ category, videos, isLoading, parallaxOffset = 0, isFi
         <Box
           sx={{
           display: 'grid',
-          gridAutoFlow: 'column',
+          gridAutoFlow: isExpanded ? 'row' : 'column',
           gap: { xs: 2, md: 2.5 },
-          gridAutoColumns: {
+          gridAutoColumns: isExpanded ? 'unset' : {
             xs: '100%',
             sm: 'calc((100% - 16px) / 2)',
             md: 'calc((100% - 32px) / 3)',
             lg: 'calc((100% - 48px) / 4)',
           },
-          overflowX: 'auto',
+          gridTemplateColumns: isExpanded
+            ? { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' }
+            : 'none',
+          overflowX: isExpanded ? 'visible' : 'auto',
           overflowY: 'hidden',
           scrollBehavior: 'smooth',
-          scrollSnapType: 'x proximity',
+          scrollSnapType: isExpanded ? 'none' : 'x proximity',
           pb: 0.5,
           scrollbarWidth: 'none',
           '& > *': {
-            scrollSnapAlign: 'start',
+            scrollSnapAlign: isExpanded ? 'unset' : 'start',
           },
           '&::-webkit-scrollbar': {
             display: 'none',
@@ -99,28 +120,32 @@ function CategorySection({ category, videos, isLoading, parallaxOffset = 0, isFi
             : videos.map((video) => <VideoCard key={video.id} video={video} />)}
         </Box>
 
-        <Box
-          sx={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: 20,
-            pointerEvents: 'none',
-            background: 'linear-gradient(90deg, #0F0F0F 0%, rgba(15,15,15,0) 100%)',
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: 20,
-            pointerEvents: 'none',
-            background: 'linear-gradient(270deg, #0F0F0F 0%, rgba(15,15,15,0) 100%)',
-          }}
-        />
+        {!isExpanded && (
+          <>
+            <Box
+              sx={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 20,
+                pointerEvents: 'none',
+                background: 'linear-gradient(90deg, #0F0F0F 0%, rgba(15,15,15,0) 100%)',
+              }}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: 20,
+                pointerEvents: 'none',
+                background: 'linear-gradient(270deg, #0F0F0F 0%, rgba(15,15,15,0) 100%)',
+              }}
+            />
+          </>
+        )}
       </Box>
     </Box>
   )

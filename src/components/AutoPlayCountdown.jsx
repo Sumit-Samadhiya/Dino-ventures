@@ -42,7 +42,7 @@ function AutoPlayCountdown({ nextVideo, secondsLeft, durationSeconds = 2, onCanc
         },
       }}
     >
-      <Stack direction="row" spacing={1.3}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.3}>
         <Box
           component="img"
           src={nextVideo.thumbnail}
@@ -54,6 +54,8 @@ function AutoPlayCountdown({ nextVideo, secondsLeft, durationSeconds = 2, onCanc
             borderRadius: 1,
             objectFit: 'cover',
             flexShrink: 0,
+            width: { xs: '100%', sm: 112 },
+            height: { xs: 170, sm: 63 },
           }}
         />
 
@@ -75,8 +77,8 @@ function AutoPlayCountdown({ nextVideo, secondsLeft, durationSeconds = 2, onCanc
         </Box>
       </Stack>
 
-      <Stack direction="row" spacing={1.2} alignItems="center" justifyContent="space-between" sx={{ mt: 1.2 }}>
-        <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" sx={{ mt: 1.2 }}>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ justifyContent: { xs: 'center', sm: 'flex-start' } }}>
           <CircularProgress variant="determinate" value={progressValue} size={26} thickness={5} />
           <Typography variant="caption" color="text.secondary">
             Auto-play next video
@@ -90,6 +92,7 @@ function AutoPlayCountdown({ nextVideo, secondsLeft, durationSeconds = 2, onCanc
           onClick={onCancel}
           aria-label="Cancel auto play"
           sx={{
+            alignSelf: { xs: 'stretch', sm: 'auto' },
             transition: 'transform 150ms ease',
             '&:active': { transform: 'scale(0.97)' },
           }}

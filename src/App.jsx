@@ -17,6 +17,7 @@ function App() {
     title: '',
     thumbnail: '',
     videoUrl: '',
+    mediaType: '',
     currentTime: 0,
     isPlaying: true,
     volume: 1,

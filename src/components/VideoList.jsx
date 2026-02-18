@@ -8,16 +8,19 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import PlayCircleFilledWhiteRoundedIcon from '@mui/icons-material/PlayCircleFilledWhiteRounded'
 import { FixedSizeList as VirtualList } from 'react-window'
 import LazyImage from './LazyImage'
 import { formatDuration } from '../utils/helpers'
 
-const ROW_HEIGHT = 94
-
 const Row = memo(function Row({ index, style, data }) {
   const video = data.videos[index]
   const isCurrent = video.id === data.currentVideoId
+  const rowHeight = data.rowHeight
+  const thumbWidth = data.isCompact ? 104 : 120
+  const thumbHeight = data.isCompact ? 58.5 : 67.5
 
   return (
     <Box style={style} sx={{ pr: 0.5 }}>
@@ -30,7 +33,7 @@ const Row = memo(function Row({ index, style, data }) {
           mb: 0.35,
           alignItems: 'center',
           gap: 1,
-          minHeight: 88,
+          minHeight: rowHeight - 6,
           border: '1px solid transparent',
           transition: 'background-color 200ms cubic-bezier(0.4,0,0.2,1), border-color 200ms cubic-bezier(0.4,0,0.2,1)',
           '&:hover': {
@@ -45,8 +48,8 @@ const Row = memo(function Row({ index, style, data }) {
         <LazyImage
           src={video.thumbnail}
           alt={video.title}
-          width={120}
-          height={67.5}
+          width={thumbWidth}
+          height={thumbHeight}
           sx={{
             borderRadius: 1,
             flexShrink: 0,
@@ -57,7 +60,7 @@ const Row = memo(function Row({ index, style, data }) {
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography
             sx={{
-              fontSize: '0.9rem',
+              fontSize: data.isCompact ? '0.84rem' : '0.9rem',
               lineHeight: 1.3,
               mb: 0.3,
               display: '-webkit-box',
@@ -70,10 +73,10 @@ const Row = memo(function Row({ index, style, data }) {
             {video.title}
           </Typography>
           <Stack direction="row" alignItems="center" spacing={0.8}>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: data.isCompact ? '0.68rem' : '0.74rem' }}>
               {video.category}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: data.isCompact ? '0.68rem' : '0.74rem' }}>
               {formatDuration(video.duration)}
             </Typography>
           </Stack>
@@ -87,13 +90,17 @@ const Row = memo(function Row({ index, style, data }) {
 })
 
 function VideoList({ open, onClose, videos, currentVideoId, category, onSelectVideo }) {
+  const theme = useTheme()
+  const isCompact = useMediaQuery(theme.breakpoints.down('sm'))
+  const rowHeight = isCompact ? 86 : 94
+
   const virtualHeight = useMemo(() => {
-    return Math.min(videos.length * ROW_HEIGHT, 56 * 16)
-  }, [videos.length])
+    return Math.min(videos.length * rowHeight, 56 * 16)
+  }, [rowHeight, videos.length])
 
   const rowData = useMemo(
-    () => ({ videos, currentVideoId, onSelectVideo }),
-    [videos, currentVideoId, onSelectVideo],
+    () => ({ videos, currentVideoId, onSelectVideo, rowHeight, isCompact }),
+    [videos, currentVideoId, onSelectVideo, rowHeight, isCompact],
   )
 
   return (
@@ -109,12 +116,16 @@ function VideoList({ open, onClose, videos, currentVideoId, category, onSelectVi
           maxHeight: '68vh',
           bgcolor: 'background.paper',
           overflow: 'hidden',
-          transition: 'transform 260ms cubic-bezier(0.4,0,0.2,1)',
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          boxShadow: 12,
+          transition: 'transform 260ms cubic-bezier(0.4,0,0.2,1), opacity 220ms cubic-bezier(0.4,0,0.2,1)',
         },
       }}
       BackdropProps={{
         sx: {
-          backgroundColor: 'rgba(0, 0, 0, 0.45)',
+          backgroundColor: 'rgba(0, 0, 0, 0.38)',
+          backdropFilter: 'blur(2px)',
         },
       }}
     >
@@ -138,8 +149,9 @@ function VideoList({ open, onClose, videos, currentVideoId, category, onSelectVi
 
         <Box
           sx={{
-            maxHeight: '56vh',
+            maxHeight: { xs: '64vh', sm: '56vh' },
             scrollBehavior: 'smooth',
+            overscrollBehaviorY: 'contain',
             position: 'relative',
             '&::before': {
               content: '""',
@@ -166,10 +178,10 @@ function VideoList({ open, onClose, videos, currentVideoId, category, onSelectVi
           }}
         >
           <VirtualList
-            height={Math.max(virtualHeight, ROW_HEIGHT)}
+            height={Math.max(virtualHeight, rowHeight)}
             width="100%"
             itemCount={videos.length}
-            itemSize={ROW_HEIGHT}
+            itemSize={rowHeight}
             itemData={rowData}
           >
             {Row}

@@ -2,7 +2,7 @@ import { memo, useRef, useState } from 'react'
 import { Box, Card, CardActionArea, CardContent, Chip, Stack, Typography } from '@mui/material'
 import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded'
 import SmartDisplayRoundedIcon from '@mui/icons-material/SmartDisplayRounded'
-import { Link as RouterLink } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import LazyImage from './LazyImage'
 import { formatDuration } from '../utils/helpers'
 import { categoryColors } from '../styles/theme'
@@ -16,6 +16,7 @@ const categoryColorMap = {
 }
 
 function VideoCard({ video }) {
+  const navigate = useNavigate()
   const [isPreviewVisible, setIsPreviewVisible] = useState(false)
   const previewRef = useRef(null)
   const canPreview = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches && video.mediaType !== 'YOUTUBE'
@@ -43,6 +44,20 @@ function VideoCard({ video }) {
     setIsPreviewVisible(false)
   }
 
+  const handleOpenVideo = () => {
+    const targetPath = `/player/${video.id}`
+    const startViewTransition = document.startViewTransition?.bind(document)
+
+    if (startViewTransition) {
+      startViewTransition(() => {
+        navigate(targetPath)
+      })
+      return
+    }
+
+    navigate(targetPath)
+  }
+
   return (
     <Card
       sx={{
@@ -60,8 +75,7 @@ function VideoCard({ video }) {
       }}
     >
       <CardActionArea
-        component={RouterLink}
-        to={`/player/${video.id}`}
+        onClick={handleOpenVideo}
         aria-label={`Open video ${video.title}`}
         onMouseEnter={handlePreviewStart}
         onMouseLeave={handlePreviewStop}
@@ -151,12 +165,12 @@ function VideoCard({ video }) {
           </Box>
         </Box>
 
-        <CardContent sx={{ p: 1.5 }}>
+        <CardContent sx={{ p: { xs: 1.1, sm: 1.5 } }}>
           <Typography
             variant="subtitle1"
             sx={(theme) => ({
               ...theme.typography.videoTitle,
-              mb: 1.2,
+              mb: { xs: 0.8, sm: 1.2 },
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
@@ -164,6 +178,7 @@ function VideoCard({ video }) {
               textOverflow: 'ellipsis',
               minHeight: '2.8em',
               color: '#FFFFFF',
+              viewTransitionName: `video-title-${video.id}`,
             })}
           >
             {video.title}
